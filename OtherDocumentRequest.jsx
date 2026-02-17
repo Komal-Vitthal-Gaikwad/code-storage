@@ -1,0 +1,212 @@
+import React, { useState, useEffect } from "react";
+import { FaHome, FaFileAlt, FaDownload, FaUser, FaArrowLeft } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+import logo from "./assets/logo.jpeg";
+import "./Dashboard.css";
+
+export default function OtherDocumentRequest() {
+
+  const navigate = useNavigate();
+  const loggedStudent = JSON.parse(localStorage.getItem("student"));
+
+  const [formData, setFormData] = useState({
+    name: "",
+    studentId: "",
+    phone: "",
+    description: "",
+    file: null,
+    fileBase64: ""
+  });
+
+  useEffect(() => {
+    if (!loggedStudent) {
+      navigate("/");
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        name: loggedStudent.name,
+        studentId: loggedStudent.student_id,
+        phone: loggedStudent.phone
+      }));
+    }
+  }, []);
+
+  const handleChange = (e) => {
+    const { name, value, files } = e.target;
+
+    if (name === "file") {
+      const file = files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({
+          ...prev,
+          file: file,
+          fileBase64: reader.result
+        }));
+      };
+
+      reader.readAsDataURL(file);
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    const today = new Date().toLocaleDateString();
+
+    const newRequest = {
+      id: Date.now(),
+      type: "Other",
+      studentId: formData.studentId,
+      name: formData.name,
+      phone: formData.phone,
+      reason: formData.description,
+      pdfFile: formData.fileBase64,
+      status: "Pending",
+      date: today
+    };
+
+    const existing = JSON.parse(localStorage.getItem("requests")) || [];
+    existing.push(newRequest);
+    localStorage.setItem("requests", JSON.stringify(existing));
+
+    alert("Other Document Submitted Successfully ✅");
+
+    navigate("/submitted-documents");
+  };
+
+  return (
+    <div className="dashboard-container">
+
+      {/* Sidebar */}
+      <div className="sidebar">
+        <img src={logo} alt="logo" />
+
+        <ul className="sidebar-menu">
+          <li onClick={() => navigate("/dashboard")}><FaHome /> Dashboard</li>
+          <li onClick={() => navigate("/submitted-documents")}><FaFileAlt /> Submitted Documents</li>
+          <li onClick={() => navigate("/requested-documents")}><FaFileAlt /> Requested Documents</li>
+          <li onClick={() => navigate("/downloads")}><FaDownload /> Downloaded Documents</li>
+          <li onClick={() => navigate("/profile")}><FaUser /> Profile</li>
+        </ul>
+      </div>
+
+      {/* Main Content */}
+      <div className="main-content">
+
+        <div className="header">
+          <div>
+            <h1>Submit Other Document</h1>
+            <p>Fill details & upload your document</p>
+          </div>
+
+          <div>
+            <button
+              onClick={() => navigate("/dashboard")}
+              style={{
+                padding: "6px 12px",
+                marginRight: "10px",
+                borderRadius: "6px",
+                backgroundColor: "#555",
+                color: "white",
+                border: "none",
+                cursor: "pointer"
+              }}
+            >
+              <FaArrowLeft /> Back
+            </button>
+
+            <button
+              onClick={() => navigate("/")}
+              style={{
+                padding: "6px 12px",
+                borderRadius: "6px",
+                backgroundColor: "#2f66c7",
+                color: "white",
+                border: "none",
+                cursor: "pointer"
+              }}
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+
+        {/* Form */}
+        <div style={{ marginTop: "40px", maxWidth: "500px" }}>
+          <form onSubmit={handleSubmit}>
+
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              readOnly
+              style={{ backgroundColor: "#eee" }}
+            />
+
+            <input
+              type="text"
+              name="studentId"
+              value={formData.studentId}
+              readOnly
+              style={{ backgroundColor: "#eee" }}
+            />
+
+            <input
+              type="text"
+              name="phone"
+              value={formData.phone}
+              readOnly
+              style={{ backgroundColor: "#eee" }}
+            />
+
+            <textarea
+              name="description"
+              placeholder="Enter document details"
+              value={formData.description}
+              onChange={handleChange}
+              required
+              rows="4"
+              style={{ marginTop: "10px" }}
+            />
+
+            <label style={{ marginTop: "10px", display: "block" }}>
+              Upload Document (PDF/DOC)
+            </label>
+
+            <input
+              type="file"
+              name="file"
+              accept=".pdf,.doc,.docx"
+              onChange={handleChange}
+              required
+            />
+
+            <button
+              type="submit"
+              style={{
+                marginTop: "15px",
+                padding: "10px 20px",
+                borderRadius: "6px",
+                backgroundColor: "#2f66c7",
+                color: "white",
+                border: "none",
+                cursor: "pointer"
+              }}
+            >
+              Submit Document
+            </button>
+
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
